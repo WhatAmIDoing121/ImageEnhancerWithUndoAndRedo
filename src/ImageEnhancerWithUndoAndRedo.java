@@ -3,7 +3,7 @@
  * (c) By Steve Tanimoto,  January 2, 2016,
  * with contributions by Si J. Liu, 
  * and originally inspired by a tutorial example at Oracle.com.
- */yjyjty
+ */
 
 import java.awt.Component;
 import java.awt.Dimension;
