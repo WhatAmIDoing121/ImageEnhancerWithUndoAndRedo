@@ -4,6 +4,7 @@
  * with contributions by Si J. Liu, 
  * and originally inspired by a tutorial example at Oracle.com.
  */
+//hi
 
 import java.awt.Component;
 import java.awt.Dimension;
