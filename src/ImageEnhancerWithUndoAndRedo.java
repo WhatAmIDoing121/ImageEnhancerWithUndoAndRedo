@@ -1,8 +1,7 @@
-/*
  * ImageEnhancer.java
  * (c) By Steve Tanimoto,  January 2, 2016,
  * with contributions by Si J. Liu, 
- * and originally inspired by a tutorial example at Oracle.com
+ * and originally inspired by a tutorial example at Oracle.com.
  */
 
 import java.awt.Component;
@@ -26,8 +25,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
-public class ImageEnhancerWithUndoAndRedo extends Component implements ActionListener {
- private static final long serialVersionUID = 1L;
+public class ImageEnhancer extends Component implements ActionListener {
+	
+	BufferedImageStack undos = new BufferedImageStack(10);
+	BufferedImageStack redos = new BufferedImageStack(10);
+	
+	private static final long serialVersionUID = 1L;
  String startingImage = "AYPE-Rainier-Vista.jpg";
     BufferedImage biTemp; // Used when reading in an image.
     BufferedImage biWorking; // The current image.
@@ -97,8 +100,8 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
      menuBar.add(editMenu);
      menuBar.add(imageMenu);
      
-     undoItem.setEnabled(false);
-     redoItem.setEnabled(false);
+//     undoItem.setEnabled(false);
+//     redoItem.setEnabled(false);
      
     }
     void setUpImageTransformations() {
@@ -135,7 +138,7 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
        ConvolveOp.EDGE_NO_OP, null);
     }
 
-    public ImageEnhancerWithUndoAndRedo() {
+    public ImageEnhancer() {
      createMenu();
      setUpImageTransformations();
         try {
@@ -164,19 +167,35 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
     }
     
     public void blur() {
-  biFiltered = blurring_op.filter(biWorking, null);
+    	undos.push(biWorking);
+    	biFiltered = blurring_op.filter(biWorking, null);
     }
     public void sharpen() {
   biFiltered = sharpening_op.filter(biWorking, null);
     }
     public void darken() {
-  biFiltered = darkening_op.filter(biWorking, null);
+    	undos.push(copyImage(biTemp));
+    	System.out.println(undos.get(undos.getSize() - 1));
+    	biFiltered = darkening_op.filter(biWorking, null);
+    	biTemp = biFiltered;
     }
     public void photoneg() {
   biFiltered = photoneg_op.filter(biWorking, null);
     }
     public void threshold() {
   biFiltered = threshold_op.filter(biWorking, null);
+    }
+    public void undo() {
+    	if (undos.getSize() == 0) throw new IllegalStateException("Nothing to undo");
+    	biFiltered = undos.get(undos.getSize() - 1);
+    	biTemp = biFiltered;
+    	redos.push(undos.get(undos.getSize() - 1));
+    	undos.pop();
+    }
+    public void redo() {
+    	biFiltered = redos.get(redos.getSize() - 1);
+    	biTemp = biFiltered;
+    	redos.pop();
     }
        
     // We handle menu selection events here: //
@@ -194,16 +213,18 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
      if (e.getSource()==darkenItem) { darken(); }
      if (e.getSource()==photoNegItem) { photoneg(); }
      if (e.getSource()==thresholdItem) { threshold(); }
+     if (e.getSource()==undoItem) { undo(); }
+     if (e.getSource()==redoItem) { redo(); }
         gWorking.drawImage(biFiltered, 0, 0, null); // Draw the pixels from biFiltered into biWorking.
         repaint(); // Ask Swing to update the screen.
         printNumbersOfElementsInBothStacks(); // Report on the states of the stacks.
         return;      
     }
 
-    private ImageEnhancerWithUndoAndRedo image_enhancer_instance;
-    public ImageEnhancerWithUndoAndRedo getImageEnhancer() { // For use by the autograder
+    private ImageEnhancer image_enhancer_instance;
+    public ImageEnhancer getImageEnhancer() { // For use by the autograder
       if(image_enhancer_instance == null) {
-       image_enhancer_instance = new ImageEnhancerWithUndoAndRedo();
+       image_enhancer_instance = new ImageEnhancer();
       }
       return image_enhancer_instance;
     }
@@ -212,7 +233,7 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
  }
 
     public static void main(String s[]) {
-     new ImageEnhancerWithUndoAndRedo().run(); // Called from below, and by the autograder.
+     new ImageEnhancer().run(); // Called from below, and by the autograder.
     }
     
     public void run() {
@@ -220,7 +241,7 @@ public class ImageEnhancerWithUndoAndRedo extends Component implements ActionLis
         f.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {System.exit(0);}
         });
-        image_enhancer_instance = new ImageEnhancerWithUndoAndRedo(); 
+        image_enhancer_instance = new ImageEnhancer(); 
         f.setJMenuBar(image_enhancer_instance.menuBar);
         f.add("Center", image_enhancer_instance);
         f.pack();
