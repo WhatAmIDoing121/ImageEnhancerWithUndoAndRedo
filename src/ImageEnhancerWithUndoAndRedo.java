@@ -27,8 +27,8 @@ import javax.swing.JMenuItem;
 
 public class ImageEnhancer extends Component implements ActionListener {
 	
-	BufferedImageStack undos = new BufferedImageStack(10);
-	BufferedImageStack redos = new BufferedImageStack(10);
+	BufferedImageStack undos;
+	BufferedImageStack redos;
 	
 	private static final long serialVersionUID = 1L;
  String startingImage = "AYPE-Rainier-Vista.jpg";
@@ -100,8 +100,8 @@ public class ImageEnhancer extends Component implements ActionListener {
      menuBar.add(editMenu);
      menuBar.add(imageMenu);
      
-//     undoItem.setEnabled(false);
-//     redoItem.setEnabled(false);
+     undoItem.setEnabled(false);
+     redoItem.setEnabled(false);
      
     }
     void setUpImageTransformations() {
@@ -141,6 +141,10 @@ public class ImageEnhancer extends Component implements ActionListener {
     public ImageEnhancer() {
      createMenu();
      setUpImageTransformations();
+     
+     undos = new BufferedImageStack();
+     redos = new BufferedImageStack();
+     
         try {
             biTemp = ImageIO.read(new File(startingImage));
             width = biTemp.getWidth(null);
@@ -167,35 +171,96 @@ public class ImageEnhancer extends Component implements ActionListener {
     }
     
     public void blur() {
-    	undos.push(biWorking);
+    	undoItem.setEnabled(true);
+    	if (undos.getSize() == undos.getArraySize()) {
+    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		for (int i = 0; i < undos.getSize(); i++) {
+    			temp.push(undos.get(i));
+    			temp2.push(redos.get(i));
+    		}
+    		redos = temp2;
+    		undos = temp;
+    	}
+    	undos.push(copyImage(biWorking));
     	biFiltered = blurring_op.filter(biWorking, null);
     }
     public void sharpen() {
+    	undoItem.setEnabled(true);
+    	if (undos.getSize() == undos.getArraySize()) {
+    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		for (int i = 0; i < undos.getSize(); i++) {
+    			temp.push(undos.get(i));
+    			temp2.push(redos.get(i));
+    		}
+    		redos = temp2;
+    		undos = temp;
+    	}
+    	undos.push(copyImage(biWorking));
   biFiltered = sharpening_op.filter(biWorking, null);
     }
     public void darken() {
-    	undos.push(copyImage(biTemp));
-    	System.out.println(undos.get(undos.getSize() - 1));
+    	undoItem.setEnabled(true);
+    	if (undos.getSize() == undos.getArraySize()) {
+    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		for (int i = 0; i < undos.getSize(); i++) {
+    			temp.push(undos.get(i));
+    			temp2.push(redos.get(i));
+    		}
+    		redos = temp2;
+    		undos = temp;
+    	}
+    	undos.push(copyImage(biWorking));
     	biFiltered = darkening_op.filter(biWorking, null);
-    	biTemp = biFiltered;
     }
     public void photoneg() {
+    	undoItem.setEnabled(true);
+    	if (undos.getSize() == undos.getArraySize()) {
+    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		for (int i = 0; i < undos.getSize(); i++) {
+    			temp.push(undos.get(i));
+    			temp2.push(redos.get(i));
+    		}
+    		redos = temp2;
+    		undos = temp;
+    	}
+    	undos.push(copyImage(biWorking));
   biFiltered = photoneg_op.filter(biWorking, null);
+  //System.out.println(redos.equals(undos));
     }
     public void threshold() {
+    	undoItem.setEnabled(true);
+    	if (undos.getSize() == undos.getArraySize()) {
+    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		for (int i = 0; i < undos.getSize(); i++) {
+    			temp.push(undos.get(i));
+    			temp2.push(redos.get(i));
+    		}
+    		redos = temp2;
+    		undos = temp;
+    	}
+    	undos.push(copyImage(biWorking));
   biFiltered = threshold_op.filter(biWorking, null);
+  
+  
     }
     public void undo() {
-    	if (undos.getSize() == 0) throw new IllegalStateException("Nothing to undo");
+    	redos.push(copyImage(biWorking));
     	biFiltered = undos.get(undos.getSize() - 1);
-    	biTemp = biFiltered;
-    	redos.push(undos.get(undos.getSize() - 1));
     	undos.pop();
+    	redoItem.setEnabled(true);
+    	if (undos.getSize() == 0) undoItem.setEnabled(false);
     }
     public void redo() {
+    	undos.push(copyImage(biWorking));
     	biFiltered = redos.get(redos.getSize() - 1);
-    	biTemp = biFiltered;
     	redos.pop();
+    	undoItem.setEnabled(true);
+    	if (redos.getSize() == 0) redoItem.setEnabled(false);
     }
        
     // We handle menu selection events here: //
