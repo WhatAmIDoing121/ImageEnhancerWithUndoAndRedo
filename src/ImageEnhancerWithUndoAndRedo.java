@@ -171,10 +171,17 @@ public class ImageEnhancer extends Component implements ActionListener {
     }
     
     public void blur() {
+    	//if an action has been performed, then that means there is something to undo
+    	//therefore the undo function can be called
     	undoItem.setEnabled(true);
+    	//if something has to be pushed into undos but there is no room for it, then
+    	//a new stack with twice the size is created and everything from undos is added
+    	//to the new stack, and undos becomes that new array. Since undos's size is increasing,
+    	//redos also must increase because the size of undos must always be equal to the size
+    	//of redos.
     	if (undos.getSize() == undos.getArraySize()) {
-    		BufferedImageStack temp = new BufferedImageStack(undos.getArraySize() * 2);
-    		BufferedImageStack temp2 = new BufferedImageStack(undos.getArraySize() * 2);
+    		BufferedImageStack temp = new BufferedImageStack(2 * undos.getArraySize());
+    		BufferedImageStack temp2 = new BufferedImageStack(2 * undos.getArraySize());
     		for (int i = 0; i < undos.getSize(); i++) {
     			temp.push(undos.get(i));
     			temp2.push(redos.get(i));
@@ -182,6 +189,8 @@ public class ImageEnhancer extends Component implements ActionListener {
     		redos = temp2;
     		undos = temp;
     	}
+    	//Add the image prior to the action to undos so that it can be restored when the user
+    	//decides to undo an action
     	undos.push(copyImage(biWorking));
     	biFiltered = blurring_op.filter(biWorking, null);
     }
@@ -249,17 +258,29 @@ public class ImageEnhancer extends Component implements ActionListener {
   
     }
     public void undo() {
+    	//if an action has been undone, then it must be able to be redone, so the image
+    	//before undoing is pushed into redos
     	redos.push(copyImage(biWorking));
+    	//display the image prior to the previous action
     	biFiltered = undos.get(undos.getSize() - 1);
+    	//since an action has already been undone, the next action should also be able to be
+    	//undone, and the image is set to the last element in undos
     	undos.pop();
     	redoItem.setEnabled(true);
+    	//if there is nothing to undo, the undo button is grayed out
     	if (undos.getSize() == 0) undoItem.setEnabled(false);
     }
     public void redo() {
+    	//if an action has been redone, then it must also be able to be undone, so the image
+    	//before undoing is pushed into undos
     	undos.push(copyImage(biWorking));
+    	//display the image prior to the previous undo
     	biFiltered = redos.get(redos.getSize() - 1);
     	redos.pop();
+    	//if an action has been redone, then we are past the first image, which means there
+    	//is always an image to go backwards to after redo is called since redo goes forward
     	undoItem.setEnabled(true);
+    	//if there is nothing to redo, the redo button is grayed out
     	if (redos.getSize() == 0) redoItem.setEnabled(false);
     }
        
@@ -278,6 +299,8 @@ public class ImageEnhancer extends Component implements ActionListener {
      if (e.getSource()==darkenItem) { darken(); }
      if (e.getSource()==photoNegItem) { photoneg(); }
      if (e.getSource()==thresholdItem) { threshold(); }
+     
+     //enable undo and redo buttons
      if (e.getSource()==undoItem) { undo(); }
      if (e.getSource()==redoItem) { redo(); }
         gWorking.drawImage(biFiltered, 0, 0, null); // Draw the pixels from biFiltered into biWorking.
